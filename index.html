@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Inbox: Automated Data Entry for Manufacturers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f4f3ef; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#8a887f; --line:#e2e0d8;
+  --accent:#1f3a5f; --accent-ink:#ffffff; --hi:#fff6d6;
+  --s1:#2a78d6; --s2:#eb6834;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b; --info:#2a78d6;
+  --r:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 60px}
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:8px}
+.eyebrow{font:500 12px/1 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.1;margin:8px 0 6px;letter-spacing:-.01em}
+.lede{max-width:680px;color:var(--ink2);margin:0}
+.byline{text-align:right;font-size:13px;color:var(--ink2)}
+.byline b{color:var(--ink);font-size:15px}
+.note{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+section{margin-top:40px}
+.step{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.step .n{font:600 13px "IBM Plex Mono",monospace;background:var(--ink);color:#fff;border-radius:6px;padding:2px 8px}
+h2{font-size:21px;margin:0}
+.sub{color:var(--ink2);margin:0 0 16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+/* inbox */
+.inbox{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.doc{padding:14px;display:flex;flex-direction:column;gap:8px;transition:border-color .3s,box-shadow .3s}
+.doc.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(31,58,95,.15)}
+.doc.done{border-color:#bfd8bf}
+.doc-h{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tag{font:500 11px "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--ink2);white-space:nowrap}
+.doc-name{font-weight:600;font-size:14px}
+pre.raw{margin:0;font:12px/1.45 "IBM Plex Mono",monospace;background:#f7f6f2;border:1px solid var(--line);border-radius:6px;padding:10px;white-space:pre-wrap;word-break:break-word;max-height:190px;overflow:auto;color:#2b2a27}
+.status{font-size:12.5px;color:var(--muted);min-height:18px}
+.status.ok{color:#0a6b0a}
+.status.warn{color:#9a5a00}
+.runbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:18px 0 0}
+button{font:600 15px "IBM Plex Sans",sans-serif;border-radius:8px;border:1px solid var(--ink);background:var(--surface);color:var(--ink);padding:10px 16px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);padding:12px 22px;font-size:16px}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible{outline:3px solid #8fb3e8;outline-offset:2px}
+.timer{font:500 14px "IBM Plex Mono",monospace;color:var(--ink2)}
+/* locked sections */
+.locked{opacity:.35;pointer-events:none;filter:grayscale(.6)}
+/* tables */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{font-size:13.5px;padding:7px 12px;font-weight:500;border-color:var(--line)}
+.tabs button[aria-selected=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tbl-wrap{overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 11.5px "IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);background:#f7f6f2;position:sticky;top:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.flag{background:#fdeceb}
+.fixes{margin:12px 0 0;padding:12px 14px;font-size:13px;color:var(--ink2)}
+.fixes ul{margin:6px 0 0;padding-left:18px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.small{font-size:12.5px;color:var(--muted)}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.kpi{padding:14px 16px}
+.kpi .l{font-size:12.5px;color:var(--ink2)}
+.kpi .v{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .d{font-size:12.5px;color:var(--muted)}
+.kpi.hero{background:var(--accent);border-color:var(--accent);color:#fff}
+.kpi.hero .l,.kpi.hero .d{color:#d6e0ee}
+.dash{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin-top:14px}
+@media (max-width:820px){.dash{grid-template-columns:1fr}.byline{text-align:left}}
+.panel{padding:16px}
+.panel h3{margin:0 0 2px;font-size:16px}
+.panel .sub{font-size:13px;margin-bottom:10px}
+/* issues */
+.issue{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.issue:first-of-type{border-top:0}
+.sev{display:inline-flex;align-items:center;gap:5px;font:600 11px "IBM Plex Mono",monospace;text-transform:uppercase;border-radius:4px;padding:2px 7px;height:fit-content;white-space:nowrap;color:#1b1b1b}
+.sev.critical{background:#f8d7d7;color:#8a1f1f}.sev.serious{background:#fbe2d6;color:#86401f}.sev.warning{background:#fdf0cc;color:#6e4a00}.sev.info{background:#e1ecfa;color:#1b4a85}
+.issue b{font-size:14px}
+.issue p{margin:2px 0 0;font-size:13px;color:var(--ink2)}
+/* chart */
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink2);margin-bottom:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+#chart{position:relative}
+#chart svg{display:block;width:100%;height:auto}
+.tip{position:absolute;pointer-events:none;background:#0b0b0b;color:#fff;font-size:12.5px;padding:6px 9px;border-radius:6px;white-space:nowrap;opacity:0;transition:opacity .1s;transform:translate(-50%,-110%)}
+/* savings */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:820px){.calc{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:13px;color:var(--ink2)}
+.field input{font:600 18px "IBM Plex Mono",monospace;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;width:100%}
+.big{font-size:44px;font-weight:700;letter-spacing:-.02em;line-height:1}
+/* try your own */
+textarea{width:100%;min-height:150px;font:12.5px/1.45 "IBM Plex Mono",monospace;border:1px solid var(--line);border-radius:6px;padding:10px;background:#fff;resize:vertical}
+.doc textarea.raw{margin:0;font:12px/1.45 "IBM Plex Mono",monospace;background:#f7f6f2;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:170px;max-height:260px;resize:vertical;color:#2b2a27}
+.doc textarea.raw:focus{outline:2px solid #8fb3e8;background:#fff}
+.doc.edited{border-color:#e9c46a}
+.x{border:0;background:none;font-size:18px;line-height:1;padding:2px 6px;color:var(--muted);cursor:pointer}
+.x:hover{color:var(--critical)}
+.drop{border:2px dashed #b9b6aa;background:transparent;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:10px;min-height:260px;padding:18px}
+.drop.over{border-color:var(--accent);background:#eef3fa}
+.drop b{font-size:16px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0 0}
+.mini{font-size:13px;padding:6px 10px;font-weight:500}
+td.chg{background:var(--hi)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;font-size:13px;padding:6px 12px;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.fixgroup{margin-top:8px}.fixgroup:first-of-type{margin-top:4px}
+footer{margin-top:50px;border-top:2px solid var(--ink);padding-top:16px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:14px}
+footer .cta{max-width:560px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Interactive prototype · Data automation for manufacturers</div>
+      <h1>Data Inbox</h1>
+      <p class="lede">Purchase orders, invoices and spreadsheets come in messy and in every format. This prototype reads them, cleans them up, cross-checks them and builds one clean dataset and a live dashboard in seconds, with nobody typing. <b>It's yours to play with:</b> edit any document, generate a new week, or drop in your own spreadsheets and PDFs.</p>
+    </div>
+    <div class="byline"><b>Jacob Lee</b><br>AI &amp; Data Automation · Vancouver, WA<br>(564) 888-3442 · jacob61185@gmail.com</div>
+  </header>
+  <p class="note">Sample companies, parts and figures are fictional. Files you add are processed in your browser and never saved; "Read with AI" (when shown) sends that one document's text to Claude to extract. A real build is set up around your own documents, systems and part numbers.</p>
+
+  <section id="s1">
+    <div class="step"><span class="n">01</span><h2>The inbox: what arrives this week</h2></div>
+    <p class="sub">Customer POs, a supplier invoice (and a reminder email for the same invoice), an inventory count and your own open POs. Normally someone retypes all of this by hand. <b>Every document is editable</b>: change a quantity or price and re-run to see the checks react.</p>
+    <div class="inbox" id="inbox"></div>
+    <div class="toolbar">
+      <button class="primary" id="run">▶ Run automation</button>
+      <button id="rand">🎲 New random week</button>
+      <button id="reset">↺ Reset samples</button>
+      <span class="timer" id="timer"></span>
+    </div>
+  </section>
+
+  <section id="s2" class="locked">
+    <div class="step"><span class="n">02</span><h2>Clean data, one format</h2></div>
+    <p class="sub">Every line item pulled into consistent tables. Stray spaces, mixed date formats, typos in part numbers, "$1,200"-style text numbers, spelling variants and duplicates are fixed automatically. Highlighted cells were cleaned.</p>
+    <div class="card panel">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div id="ba" style="margin-bottom:10px"></div><div class="tbl-wrap" id="tbl"></div>
+      <div class="actions">
+        <button id="dl">Download CSV</button>
+        <button id="copy">Copy as spreadsheet data</button>
+        <span class="small" id="copyMsg"></span>
+      </div>
+    </div>
+    <div class="card fixes" id="fixes"></div>
+  </section>
+
+  <section id="s3" class="locked">
+    <div class="step"><span class="n">03</span><h2>Cross-checks and dashboard</h2></div>
+    <p class="sub">Once the data is clean, the system checks invoices against your POs, checks orders against inventory, and flags anything that needs a person.</p>
+    <div class="kpis" id="kpis"></div>
+    <div class="dash">
+      <div class="card panel">
+        <h3>Needs attention</h3>
+        <p class="sub">Caught automatically, sorted by severity</p>
+        <div id="issues"></div>
+      </div>
+      <div class="card panel">
+        <h3>Customer demand vs. stock on hand</h3>
+        <p class="sub">Finished parts, units. Orange past blue means you can't fill every order from stock.</p>
+        <div class="legend"><span><i style="background:var(--s1)"></i>On hand</span><span><i style="background:var(--s2)"></i>Ordered by customers</span></div>
+        <div id="chart"><div class="tip" id="tip"></div></div>
+        <details style="margin-top:8px"><summary class="small">Show as table</summary><div id="chartTable"></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="s4">
+    <div class="step"><span class="n">04</span><h2>What it's worth to your business</h2></div>
+    <p class="sub">Enter your own numbers. The defaults are placeholders, not estimates of your business.</p>
+    <div class="calc">
+      <div class="card panel">
+        <div class="field"><label for="c-docs">Documents handled per week (POs, invoices, sheets)</label><input id="c-docs" type="number" min="0" value="100"></div>
+        <div class="field"><label for="c-min">Minutes to enter and check one by hand</label><input id="c-min" type="number" min="0" value="8"></div>
+        <div class="field"><label for="c-rate">Loaded hourly cost of that person ($)</label><input id="c-rate" type="number" min="0" value="28"></div>
+      </div>
+      <div class="card panel" style="display:flex;flex-direction:column;justify-content:center;gap:14px">
+        <div><div class="small">Hours of data entry per month</div><div class="big" id="o-hrs">0</div></div>
+        <div><div class="small">Labor cost per year</div><div class="big" id="o-yr">$0</div></div>
+        <div class="small">Doesn't count errors caught, like the duplicate invoice and the overcharges above, or faster quotes and shipping.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="cta"><b>What a real build looks like:</b> a free 1-hour walkthrough of your most time-consuming data process, then a fixed-price plan. The pilot runs alongside your current process until you trust it. Your data stays yours, and NDA is no problem.</div>
+    <div><b>Jacob Lee</b><br>(564) 888-3442 · jacob61185@gmail.com<br>github.com/jacobarrio</div>
+  </footer>
+</div>
+
+<script>
+// ===== Data Inbox engine: sample docs, extraction, cleaning, checks =====
+// ---- Sample generator: DEFAULTS reproduce the original demo week; randomParams() makes a new one
+const DEFAULTS = { nQ1:250, nP1:4.85, nQ2:120, nP2:12.40, rQ1:40, rP1:38.00, rQ2:500, rP2:4.60, invPrice:142.50, coilBilled:2500, dup:true, oh1042:600, oh2210:410, oh3300:25, oh6061:12, oh304:6, d1:12, d2:13 };
+const m2 = n => Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function randomParams() {
+  const ri = (a, b, step = 1) => a + step * Math.floor(Math.random() * ((b - a) / step + 1));
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  return { nQ1: ri(100, 400, 25), nP1: pick([4.85, 4.75, 4.95]), nQ2: ri(60, 300, 20), nP2: pick([12.40, 12.10, 12.75]),
+    rQ1: ri(20, 80, 5), rP1: pick([38.00, 37.50, 39.25]), rQ2: ri(200, 700, 50), rP2: pick([4.60, 4.85, 4.70]),
+    invPrice: Math.random() < .5 ? 139.00 : pick([142.50, 141.00, 144.25]), coilBilled: Math.random() < .5 ? 2440 : pick([2500, 2480, 2540]),
+    dup: Math.random() < .5, oh1042: ri(300, 1200, 50), oh2210: ri(80, 500, 10), oh3300: ri(10, 90, 5), oh6061: ri(8, 40, 2), oh304: ri(2, 9), d1: ri(9, 13), d2: ri(10, 14) };
+}
+function makeSampleDocs(p = DEFAULTS) {
+  const inv1 = 30 * p.invPrice, subtotal = inv1 + p.coilBilled;
+  const docs = [
+    { id: "d1", kind: "Email", name: "PO from Northgate Marine (email body)",
+      text: `From: purchasing@northgatemarine.example
+Subject: PO 44817 - brackets + hinges, need by 12/5
+Date: Nov ${p.d1}, 2026
+
+Hi team,
+Please process our PO# 44817 below. Ship to our Tacoma dock.
+
+CPF-1042  Aluminum mounting bracket, 6061-T6   qty ${p.nQ1}  @ $${m2(p.nP1)}
+CPF-2210  SS hinge assembly                     qty ${p.nQ2}  @ $${m2(p.nP2)}
+
+Need by: 12/05/2026
+Thanks, Dana Ruiz – Northgate Marine Supply` },
+    { id: "d2", kind: "PDF", name: "PO from Ridgeline Ag (PDF)",
+      text: `RIDGELINE AG EQUIPMENT — PURCHASE ORDER
+PO Number: PO-7731        Order Date: 2026-11-${String(p.d2).padStart(2, "0")}
+Vendor: Cascade Precision Fab
+
+Line  Part No.   Description              Qty   Unit Price   Ext.
+1     CPF-3300   Hydraulic mount plate     ${p.rQ1}    $${m2(p.rP1)}       $${m2(p.rQ1 * p.rP1)}
+2     CPF-1042   Mounting bracket 6061    ${p.rQ2}    $${m2(p.rP2)}        $${m2(p.rQ2 * p.rP2)}
+
+Requested delivery: 12/12/2026` },
+    { id: "d3", kind: "PDF", name: "Invoice from Pacific Metals (PDF)",
+      text: `PACIFIC METALS CO.  ·  INVOICE
+Invoice #: INV-90213     Invoice Date: 11/14/2026
+Bill To: Cascade Precision Fab     Your PO: P-2290
+
+Item        Description                    Qty   Unit      Amount
+RAW-6061    Alum sheet .125 x 48 x 96       30   ${m2(p.invPrice)}    ${m2(inv1)}
+RAW-304S    SS 304 coil 16ga                 4   610.00    ${m2(p.coilBilled)}
+                                         Subtotal         ${m2(subtotal)}
+Terms: Net 30` }
+  ];
+  if (p.dup) docs.push({ id: "d4", kind: "Email", name: "Invoice reminder from Pacific Metals (email)",
+      text: `Subject: Fwd: Invoice INV-90213 from Pacific Metals
+From: ap@pacificmetals.example
+Date: 11/15/2026
+
+Reminder: invoice INV-90213 for your PO P-2290, total due $${m2(subtotal)}.
+
+RAW-6061 Alum sheet .125 x 48 x 96   30   ${m2(p.invPrice)}   ${m2(inv1)}
+RAW-304S SS 304 coil 16ga             4   610.00   ${m2(p.coilBilled)}` });
+  docs.push(
+    { id: "d5", kind: "Spreadsheet", name: "Inventory count (spreadsheet export)",
+      text: `Part #,Desc,On Hand,Reorder Pt,UOM
+CPF-1042,Mounting bracket ,  ${p.oh1042} ,800,ea
+cpf-2210,Hinge assy,${p.oh2210},150,EA
+CPF-3300 ,Hydraulic mount plate,${p.oh3300},30,ea
+RAW-6061,Alum sheet .125,${p.oh6061} sheets,20,sht
+RAW-304S,SS coil 16ga,${p.oh304},4,coil` },
+    { id: "d6", kind: "Spreadsheet", name: "Our open purchase orders (system export)",
+      text: `OUR PO,Supplier,Part,Qty,Agreed Price
+P-2290,Pacific Metals Co.,RAW-6061,30,139.00
+P-2290,Pacific Metals Co.,RAW-304S,4,610.00` });
+  return docs;
+}
+const SAMPLE_DOCS = makeSampleDocs();
+
+const num = s => { if (s == null) return NaN; const m = String(s).replace(/[$,]/g, "").match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : NaN; };
+const titleCase = s => s.toLowerCase().replace(/\b([a-z])/g, c => c.toUpperCase()).replace(/\bCo\b/, "Co.").replace(/\.\./g, ".");
+const MONTHS = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12 };
+function isoDate(s) {
+  if (!s) return "";
+  let m;
+  if ((m = s.match(/(\d{4})-(\d{2})-(\d{2})/))) return m[0];
+  if ((m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return `${m[3]}-${m[1].padStart(2,"0")}-${m[2].padStart(2,"0")}`;
+  if ((m = s.match(/([A-Za-z]{3})[a-z]*\.? (\d{1,2}), (\d{4})/))) return `${m[3]}-${String(MONTHS[m[1].toLowerCase()]||1).padStart(2,"0")}-${m[2].padStart(2,"0")}`;
+  return "";
+}
+const DATE_RE = /(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}|[A-Z][a-z]{2}\.? \d{1,2}, \d{4})/;
+
+function parseCSVRows(text) {
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ",") { row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += c;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+function parseCSV(text) {
+  const all = parseCSVRows(text.replace(/^﻿/, ""));
+  let h = 0; while (h < all.length && all[h].every(x => !x.trim())) h++;
+  return { header: (all[h] || []).map(x => x.trim()), rows: all.slice(h + 1) };
+}
+function looksLikeCSV(text) { const first = text.trim().split(/\r?\n/)[0] || ""; return (first.match(/,/g) || []).length >= 2; }
+
+// Generic spreadsheet cleaner: works on any table. Returns cleaned rows + a summary of what changed.
+const CODE_RE = /^[A-Za-z]{1,5}[- ]?\d[\w-]*$/;
+function cleanTable(header, rows) {
+  const counts = {}, examples = {};
+  const note = (k, ex) => { counts[k] = (counts[k] || 0) + 1; if (!examples[k] && ex) examples[k] = ex; };
+  header = header.map((x, i) => { const t = (x || "").trim().replace(/\s+/g, " "); if (!t) { note("Named blank column headers", `Column ${i + 1}`); return `Column ${i + 1}`; } return t; });
+  const W = header.length;
+  let body = rows.map(r => { const a = r.slice(0, W); while (a.length < W) a.push(""); return a; });
+  const before = body.length;
+  body = body.filter(r => r.some(c => (c || "").trim()));
+  if (before - body.length) { counts["Removed blank rows"] = before - body.length; }
+  const changed = body.map(r => r.map(() => false));
+  const set = (ri, ci, v, k, ex) => { if (body[ri][ci] !== v) { body[ri][ci] = v; changed[ri][ci] = true; note(k, ex); } };
+  // pass 1: whitespace
+  body.forEach((r, ri) => r.forEach((c, ci) => { const t = (c || "").trim().replace(/\s{2,}/g, " "); if (t !== c) set(ri, ci, t, "Trimmed stray spaces", `"${c}" → "${t}"`); }));
+  const kinds = header.map((h, ci) => {
+    const vals = body.map(r => r[ci]).filter(v => v !== "");
+    if (!vals.length) return "text";
+    const frac = re => vals.filter(v => re.test(v)).length / vals.length;
+    if (/phone|tel\b|fax|mobile|cell/i.test(h)) return "phone";
+    if (frac(/^(\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|[A-Za-z]{3,9}\.? \d{1,2},? \d{4})$/) >= .6 || /date/i.test(h)) return "date";
+    if (frac(/^\(?-?\$?\s?[\d,]*\.?\d+\)?\s*[A-Za-z%]{0,8}$/) >= .7) return "number";
+    if (frac(CODE_RE) >= .7) return "code";
+    return "text";
+  });
+  body.forEach((r, ri) => r.forEach((c, ci) => {
+    if (!c) return;
+    const k = kinds[ci];
+    if (k === "phone") { const d = c.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""); if (d.length === 10) { const v = `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`; if (v !== c) set(ri, ci, v, "Standardized phone numbers", `"${c}" → "${v}"`); } }
+    else if (k === "date") { const d = isoDateLoose(c); if (d && d !== c) set(ri, ci, d, "Standardized dates to YYYY-MM-DD", `"${c}" → "${d}"`); }
+    else if (k === "number") { let s = c.replace(/[$,\s]/g, ""); const neg = /^\(.*\)$/.test(s); const n = num(s); if (!isNaN(n)) { const v = String(neg ? -n : n); if (v !== c) set(ri, ci, v, "Converted text to clean numbers", `"${c}" → ${v}`); } }
+    else if (k === "code") { const v = c.toUpperCase().replace(/\s+/g, "-").replace(/^([A-Z]{1,5})-?(\d)/, "$1-$2"); if (v !== c) set(ri, ci, v, "Standardized part/ID codes", `"${c}" → "${v}"`); }
+  }));
+  // unify spelling variants in text columns (e.g. "acme corp" / "ACME Corp." → most common form)
+  header.forEach((h, ci) => {
+    if (kinds[ci] !== "text") return;
+    const groups = {};
+    body.forEach(r => { const v = r[ci]; if (!v) return; const key = v.toLowerCase().replace(/[.,]+$/, "").replace(/\s+(inc|llc|co|corp|ltd)\.?$/, " $1"); (groups[key] = groups[key] || {})[v] = (groups[key][v] || 0) + 1; });
+    const canon = {};
+    for (const g of Object.values(groups)) { const sc = ([v, n]) => (v !== v.toLowerCase() && v !== v.toUpperCase() ? 1000 : 0) + n; const best = Object.entries(g).sort((a, b) => sc(b) - sc(a) || b[0].length - a[0].length)[0][0]; for (const v of Object.keys(g)) canon[v] = best; }
+    body.forEach((r, ri) => { const v = r[ci]; if (v && canon[v] !== v) set(ri, ci, canon[v], "Unified spelling variants of the same name", `"${v}" → "${canon[v]}"`); });
+  });
+  // exact duplicates
+  const seen = new Set(), keep = [], keepChanged = [];
+  body.forEach((r, i) => { const k = r.join("\u0001").toLowerCase(); if (seen.has(k)) { note("Removed duplicate rows"); return; } seen.add(k); keep.push(r); keepChanged.push(changed[i]); });
+  const fixes = Object.entries(counts).map(([k, n]) => `${k}: ${n}${examples[k] ? ` (e.g. ${examples[k]})` : ""}`);
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  return { header, rows: keep, changed: keepChanged, kinds, fixes, total };
+}
+function isoDateLoose(s) {
+  let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  if ((m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/))) { const y = m[3].length === 2 ? "20" + m[3] : m[3]; return `${y}-${m[1].padStart(2,"0")}-${m[2].padStart(2,"0")}`; }
+  if ((m = s.match(/^([A-Za-z]{3})[a-z]*\.? (\d{1,2}),? (\d{4})$/)) && MONTHS[m[1].toLowerCase()]) return `${m[3]}-${String(MONTHS[m[1].toLowerCase()]).padStart(2,"0")}-${m[2].padStart(2,"0")}`;
+  return "";
+}
+
+function colIndex(header, re) { return header.findIndex(h => re.test(h.toLowerCase())); }
+
+// Extract one document with the rules engine. Returns {type, party, docNo, poRef, date, lines, fixes}
+function extractDoc(doc) {
+  const text = doc.text;
+  const fixes = [];
+  if (doc.ai) return { ...doc.ai, fixes: [], by: "AI" };
+  if (looksLikeCSV(text)) {
+    const { header, rows } = parseCSV(text);
+    const h = header.map(x => x.toLowerCase());
+    const iPart = colIndex(header, /part|item|sku/);
+    const clean = (raw, label) => {
+      const t = (raw ?? "").trim();
+      if (t !== (raw ?? "")) fixes.push(`Trimmed stray spaces in ${label} "${raw}"`);
+      return t;
+    };
+    const cleanPart = raw => {
+      const t = clean(raw, "part #");
+      if (t !== t.toUpperCase()) fixes.push(`Normalized part # "${t}" → "${t.toUpperCase()}"`);
+      return t.toUpperCase();
+    };
+    const cleanNum = (raw, label) => {
+      const t = (raw ?? "").trim();
+      const n = num(t);
+      if (t !== "" && String(n) !== t.replace(/\.00$/, "").replace(/\.0$/, "") && !/^\d+\.\d+$/.test(t)) fixes.push(`Converted ${label} "${raw.trim()}" → ${n}`);
+      else if (t !== raw) fixes.push(`Trimmed stray spaces in ${label} "${raw}"`);
+      return n;
+    };
+    if (h.some(x => /on ?hand/.test(x))) {
+      const iDesc = colIndex(header, /desc/), iOn = colIndex(header, /on ?hand/), iRop = colIndex(header, /reorder|min/), iU = colIndex(header, /uom|unit/);
+      const lines = rows.map(r => ({ part: cleanPart(r[iPart]), desc: clean(r[iDesc], "description"), onHand: cleanNum(r[iOn], "on-hand qty"), rop: cleanNum(r[iRop], "reorder point"), uom: (r[iU] || "").trim().toLowerCase() }));
+      return { type: "inventory", party: "Internal", docNo: "Inventory count", poRef: "", date: "", lines, fixes };
+    }
+    if (!(h.some(x => /agreed|our po/.test(x)))) {
+      const t = cleanTable(header, rows);
+      const H = t.header, ci = re => H.findIndex(x => re.test(x.toLowerCase()));
+      const iCust = ci(/customer|client|sold to|ship to/), iP = ci(/part|item|sku|product/), iQ = ci(/qty|quantity/), iPrice = ci(/price|rate|unit cost/);
+      if (iCust >= 0 && iP >= 0 && iQ >= 0) {
+        const iPoN = H.findIndex(x => /\bpo\b|po ?#|order ?(#|no|num)/i.test(x) && !/date/i.test(x)), iD = ci(/date/), iDs = ci(/desc/);
+        const lines = t.rows.map(r => { const qty = num(r[iQ]), price = iPrice >= 0 ? num(r[iPrice]) : 0; return { customer: r[iCust], po: iPoN >= 0 ? r[iPoN] : "", date: iD >= 0 ? r[iD] : "", part: r[iP].toUpperCase(), desc: iDs >= 0 ? r[iDs] : "", qty, price: price || 0, amount: +(qty * (price || 0)).toFixed(2) }; });
+        return { type: "ordersheet", party: "Various", docNo: "Order sheet", poRef: "", date: "", lines, table: t, raw: { header, rows }, fixes: t.fixes };
+      }
+      return { type: "table", party: "", docNo: doc.name || "Spreadsheet", poRef: "", date: "", lines: t.rows, table: t, raw: { header, rows }, fixes: t.fixes };
+    }
+    const iPo = colIndex(header, /po/), iSup = colIndex(header, /supplier|vendor/), iQty = colIndex(header, /qty|quantity/), iPr = colIndex(header, /price|cost/);
+    const lines = rows.map(r => ({ po: clean(r[iPo], "PO #"), supplier: clean(r[iSup], "supplier"), part: cleanPart(r[iPart]), qty: num(r[iQty]), price: num(r[iPr]) }));
+    return { type: "ourpo", party: "Internal", docNo: "Open POs", poRef: "", date: "", lines, fixes };
+  }
+
+  const isInvoice = /invoice/i.test(text);
+  let docNo = "", poRef = "", party = "", date = "";
+  let m;
+  if (isInvoice) {
+    if ((m = text.match(/\b(INV-?\d{3,})\b/i))) docNo = m[1].toUpperCase();
+    if ((m = text.match(/PO:?\s*(P-\d{3,})/i))) poRef = m[1].toUpperCase();
+  } else {
+    if ((m = text.match(/PO(?:\s*Number|\s*#|#)?\s*[:#]?\s*((?:PO-)?\d{4,6})/i))) docNo = m[1].toUpperCase();
+    if (!/^PO-/.test(docNo) && docNo) docNo = "PO-" + docNo;
+  }
+  if ((m = text.match(/^([A-Z][A-Z&. ]{3,}?)\s+[—·–-]/m))) party = titleCase(m[1].trim());
+  else if ((m = text.match(/[–—-]\s*([A-Z][A-Za-z ]+?(?:Supply|Co\.?|Inc\.?|LLC|Equipment|Metals))\s*$/m))) party = m[1].trim();
+  else if ((m = text.match(/\bfrom\s+([A-Z][A-Za-z ]+?)\s*$/m))) party = m[1].trim();
+  if ((m = text.match(new RegExp("Date:?\\s*" + DATE_RE.source, "i")))) date = isoDate(m[1]);
+  else if ((m = text.match(DATE_RE))) date = isoDate(m[1]);
+
+  const LINE_RE = /^(?:\d+\s+)?([A-Za-z]{2,4}-\d{3,4}[A-Za-z]?)\s+(.+?)\s+(?:qty\s*)?(\d[\d,]*)\s+(?:@\s*)?\$?([\d,]+\.\d{2})(?:\s+\$?([\d,]+\.\d{2}))?\s*$/i;
+  const lines = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const lm = raw.trim().match(LINE_RE);
+    if (!lm) continue;
+    const qty = num(lm[3]), price = num(lm[4]);
+    const stated = lm[5] ? num(lm[5]) : null;
+    lines.push({ part: lm[1].toUpperCase(), desc: lm[2].replace(/,\s*$/, "").trim(), qty, price, amount: stated ?? +(qty * price).toFixed(2), statedAmount: stated });
+  }
+  if (!party && (m = text.match(/@([a-z0-9-]+)\./i))) party = titleCase(m[1].replace(/-/g, " "));
+  return { type: isInvoice ? "invoice" : "order", party, docNo, poRef, date, lines, fixes };
+}
+
+// Run the whole pipeline over a set of docs
+function runPipeline(docs) {
+  const extracted = docs.map(d => ({ doc: d, ...extractDoc(d) }));
+  const orders = [], invoiceLines = [], inventory = [], ourPOs = [], issues = [], tables = [];
+  const seenInvoices = new Map();
+  for (const e of extracted) {
+    if (e.type === "table") { tables.push({ name: e.doc.name, ...e.table, raw: e.raw }); continue; }
+    if (e.type === "ordersheet") { e.lines.forEach(l => orders.push({ source: e.doc.name, ...l })); continue; }
+    if (e.type === "order") e.lines.forEach(l => orders.push({ source: e.doc.name, customer: e.party, po: e.docNo, date: e.date, ...l }));
+    else if (e.type === "inventory") inventory.push(...e.lines);
+    else if (e.type === "ourpo") ourPOs.push(...e.lines);
+    else if (e.type === "invoice") {
+      if (seenInvoices.has(e.docNo)) {
+        const total = e.lines.reduce((s, l) => s + l.amount, 0);
+        e.duplicateOf = seenInvoices.get(e.docNo);
+        issues.push({ sev: "warning", title: `Duplicate invoice ${e.docNo}`, detail: `The same invoice arrived twice ("${seenInvoices.get(e.docNo)}" and "${e.doc.name}"). Paying both would double-pay ${fmt$(total)}. The second copy was held, not entered.`, atRisk: total });
+        continue;
+      }
+      seenInvoices.set(e.docNo, e.doc.name);
+      e.lines.forEach(l => invoiceLines.push({ source: e.doc.name, supplier: e.party, inv: e.docNo, poRef: e.poRef, date: e.date, ...l }));
+    }
+  }
+  // Invoice math check
+  for (const l of invoiceLines) {
+    const calc = +(l.qty * l.price).toFixed(2);
+    if (l.statedAmount != null && Math.abs(calc - l.statedAmount) > 0.01)
+      issues.push({ sev: "critical", title: `Math error on ${l.inv}, ${l.part}`, detail: `Billed ${fmt$(l.statedAmount)}, but ${l.qty} × ${fmt$(l.price)} = ${fmt$(calc)}. Overbilled ${fmt$(l.statedAmount - calc)}.`, atRisk: l.statedAmount - calc });
+  }
+  // Price vs our PO
+  for (const l of invoiceLines) {
+    const po = ourPOs.find(p => p.po === l.poRef && p.part === l.part);
+    if (!po) { issues.push({ sev: "serious", title: `No matching PO for ${l.inv}, ${l.part}`, detail: `Invoice references ${l.poRef || "no PO"}, which isn't in your open purchase orders.`, atRisk: 0 }); continue; }
+    if (Math.abs(po.price - l.price) > 0.001) {
+      const diff = (l.price - po.price) * l.qty;
+      issues.push({ sev: "serious", title: `Price above PO on ${l.inv}, ${l.part}`, detail: `PO ${po.po} agreed ${fmt$(po.price)}/unit; invoice charges ${fmt$(l.price)}/unit × ${l.qty} = ${fmt$(diff)} over.`, atRisk: diff });
+    }
+  }
+  // Demand vs stock
+  const demand = {};
+  orders.forEach(o => { demand[o.part] = (demand[o.part] || 0) + o.qty; });
+  const stock = inventory.map(i => ({ ...i, demand: demand[i.part] || 0 }));
+  for (const s of stock) {
+    if (s.demand > s.onHand) issues.push({ sev: "critical", title: `Short ${s.demand - s.onHand} × ${s.part}`, detail: `Open customer orders need ${s.demand} ${s.uom}; only ${s.onHand} on hand. Schedule production or adjust ship dates.`, atRisk: 0 });
+    else if (s.onHand < s.rop) issues.push({ sev: "warning", title: `${s.part} below reorder point`, detail: `${s.onHand} ${s.uom} on hand vs reorder point ${s.rop}. Time to reorder.`, atRisk: 0 });
+  }
+  // Inconsistent customer pricing
+  const byPart = {};
+  orders.forEach(o => (byPart[o.part] = byPart[o.part] || []).push(o));
+  for (const [part, os] of Object.entries(byPart)) {
+    const prices = [...new Set(os.map(o => o.price))];
+    if (prices.length > 1) issues.push({ sev: "info", title: `Different prices for ${part}`, detail: os.map(o => `${o.customer}: ${fmt$(o.price)}`).join(" vs ") + ". Confirm this is intentional (volume pricing?).", atRisk: 0 });
+  }
+  const order = { critical: 0, serious: 1, warning: 2, info: 3 };
+  issues.sort((a, b) => order[a.sev] - order[b.sev]);
+  return { extracted, orders, invoiceLines, inventory: stock, ourPOs, issues, tables };
+}
+
+function fmt$(n) { return (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+
+
+</script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const n0 = v => Number(v).toLocaleString("en-US");
+let DOCS = makeSampleDocs().map(d => ({ ...d }));
+let RESULT = null, hasRun = false, uid = 100;
+
+// ---------- capabilities (optional; page works without them)
+let downloads = null, sampleFn = null;
+if (window.claude && claude.use) {
+  claude.use("downloads").then(d => { downloads = d; $("#dl").hidden = !d; }).catch(() => {});
+  claude.use("sample").then(s => { sampleFn = s; if (hasRun) renderStatuses(); }).catch(() => {});
+}
+
+// ---------- 01 inbox
+function renderInbox() {
+  $("#inbox").innerHTML = `
+    <label class="card drop" id="drop">
+      <b>＋ Add your own documents</b>
+      <span class="small">Drop files here or tap to choose: Excel, CSV, PDF or .txt</span>
+      <input type="file" id="file" multiple hidden>
+      <span class="small">or</span>
+      <button type="button" class="mini" id="pasteNew">Paste text as a new document</button>
+      <span class="small" id="dropMsg"></span>
+    </label>` +
+    DOCS.map(d => `
+    <div class="card doc" id="card-${d.id}">
+      <div class="doc-h"><span class="doc-name">${esc(d.name)}</span><span style="display:flex;gap:4px;align-items:center"><span class="tag">${esc(d.kind)}</span><button class="x" title="Remove document" data-rm="${d.id}" aria-label="Remove ${esc(d.name)}">×</button></span></div>
+      <textarea class="raw" data-id="${d.id}" spellcheck="false" aria-label="Contents of ${esc(d.name)}">${esc(d.text)}</textarea>
+      <div class="status" id="st-${d.id}">${hasRun ? "" : "Waiting"}</div>
+    </div>`).join("");
+  $("#inbox").querySelectorAll("textarea.raw").forEach(ta => ta.addEventListener("input", () => {
+    const d = DOCS.find(x => x.id === ta.dataset.id); d.text = ta.value; delete d.ai;
+    const card = $("#card-" + d.id); card.classList.add("edited"); card.classList.remove("done");
+    const st = $("#st-" + d.id); st.className = "status warn"; st.textContent = "✎ Edited. Re-run to update.";
+  }));
+  $("#inbox").querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { DOCS = DOCS.filter(d => d.id !== b.dataset.rm); renderInbox(); if (hasRun) process(false); });
+  const drop = $("#drop"), input = $("#file");
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+  input.addEventListener("change", () => addFiles(input.files));
+  $("#pasteNew").onclick = e => { e.preventDefault(); e.stopPropagation(); DOCS.unshift({ id: "u" + uid++, kind: "Text", name: "Pasted document", text: "" }); renderInbox(); const ta = $("#inbox textarea.raw"); ta.placeholder = "Paste a purchase order, invoice or spreadsheet (CSV) here, then press Run automation…"; ta.focus(); };
+}
+
+// ---------- file intake (libraries load only when needed)
+const libs = {};
+function loadScript(src) { return libs[src] ||= new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => no(new Error("Couldn't load " + src)); document.head.appendChild(s); }); }
+async function readXlsx(file) {
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+  const wb = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: false });
+  return wb.SheetNames.map(n => ({ sheet: n, csv: XLSX.utils.sheet_to_csv(wb.Sheets[n], { blankrows: true }) })).filter(s => s.csv.replace(/[,\s]/g, "").length);
+}
+async function readPdf(file) {
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const out = [];
+  for (let p = 1; p <= Math.min(pdf.numPages, 20); p++) {
+    const tc = await (await pdf.getPage(p)).getTextContent();
+    const rows = new Map();
+    tc.items.forEach(it => { if (!it.str.trim()) return; const y = Math.round(it.transform[5] / 3) * 3; (rows.get(y) || rows.set(y, []).get(y)).push(it); });
+    [...rows.keys()].sort((a, b) => b - a).forEach(y => {
+      const items = rows.get(y).sort((a, b) => a.transform[4] - b.transform[4]);
+      let line = "", lastEnd = null;
+      items.forEach(it => { const x = it.transform[4]; if (lastEnd != null) line += (x - lastEnd > 12 ? "   " : x - lastEnd > 1 ? " " : ""); line += it.str; lastEnd = x + (it.width || 0); });
+      out.push(line);
+    });
+    out.push("");
+  }
+  return out.join("\n").trim();
+}
+async function addFiles(files) {
+  const msg = $("#dropMsg"); msg.textContent = "Reading…";
+  const added = [];
+  for (const f of files) {
+    const ext = (f.name.split(".").pop() || "").toLowerCase();
+    try {
+      if (!["xlsx","xls","xlsm","ods","csv","txt","pdf","tsv"].includes(ext)) { msg.textContent = `${f.name}: unsupported type. Use Excel, CSV, PDF or .txt.`; continue; }
+      if (["xlsx","xls","xlsm","ods"].includes(ext)) (await readXlsx(f)).forEach(s => added.push({ kind: "Excel", name: `${f.name}${s.sheet !== "Sheet1" ? " · " + s.sheet : ""}`, text: s.csv }));
+      else if (ext === "pdf") { const text = await readPdf(f); added.push({ kind: "PDF", name: f.name, text: text || "(No text found. This looks like a scanned PDF. A real build would add OCR.)" }); }
+      else added.push({ kind: ext === "csv" ? "CSV" : "Text", name: f.name, text: await f.text() });
+    } catch (e) { msg.textContent = `Couldn't read ${f.name}: ${e.message}`; }
+  }
+  added.forEach(d => DOCS.unshift({ id: "u" + uid++, ...d }));
+  if (added.length) { msg.textContent = ""; renderInbox(); process(); }
+}
+
+// ---------- run
+async function process(animate = true) {
+  const btn = $("#run"); btn.disabled = true; btn.textContent = "Running…";
+  const t0 = performance.now();
+  RESULT = runPipeline(DOCS);
+  hasRun = true;
+  for (const e of RESULT.extracted) {
+    const card = $("#card-" + e.doc.id); if (!card) continue;
+    card.classList.remove("edited", "done");
+    if (animate) { card.classList.add("active"); await new Promise(r => setTimeout(r, Math.min(320, 1800 / RESULT.extracted.length))); card.classList.remove("active"); }
+    card.classList.add("done");
+  }
+  renderStatuses();
+  const secs = ((performance.now() - t0) / 1000).toFixed(1);
+  const mins = Math.max(5, RESULT.extracted.length * 7);
+  $("#timer").textContent = `Done in ${secs}s · by hand: ~${mins} min`;
+  btn.disabled = false; btn.textContent = "↻ Re-run automation";
+  renderAll();
+  ["#s2", "#s3"].forEach(s => $(s).classList.remove("locked"));
+}
+function renderStatuses() {
+  for (const e of RESULT.extracted) {
+    const st = $("#st-" + e.doc.id); if (!st) continue;
+    const via = e.by === "AI" ? " · read by AI" : "";
+    if (e.duplicateOf) { st.className = "status warn"; st.innerHTML = `⚠ Duplicate of ${esc(e.docNo)}, held back, not entered`; continue; }
+    const what = {
+      order: `Customer PO ${e.docNo || "(no #)"} · ${e.party || "unknown sender"} · ${e.lines.length} lines`,
+      invoice: `Invoice ${e.docNo || "(no #)"} · ${e.party || "unknown sender"} · ${e.lines.length} lines`,
+      inventory: `${e.lines.length} inventory rows`, ourpo: `${e.lines.length} open PO lines`,
+      ordersheet: `Order sheet · ${e.lines.length} order lines`,
+      table: `Spreadsheet cleaned · ${e.lines.length} rows · ${e.table ? e.table.total : 0} fixes`
+    }[e.type];
+    const fx = e.fixes.length && e.type !== "table" ? ` · ${e.fixes.length} fixes` : "";
+    if ((e.type === "order" || e.type === "invoice") && !e.lines.length) {
+      st.className = "status warn";
+      st.innerHTML = `⚠ No line items found by the rules engine.` + (sampleFn ? ` <button class="mini" data-ai="${e.doc.id}">Read with AI</button>` : ` A real build adds AI reading for any layout.`);
+      const b = st.querySelector("[data-ai]"); if (b) b.onclick = () => aiExtract(e.doc.id, b);
+    } else { st.className = "status ok"; st.textContent = `✓ ${what}${fx}${via}`; }
+  }
+}
+async function aiExtract(id, btn) {
+  const d = DOCS.find(x => x.id === id); btn.disabled = true; btn.textContent = "Reading…";
+  const prompt = `You extract data from business documents (purchase orders, invoices) for a manufacturer. Return ONLY a JSON object, no prose, with keys: type ("order" if a customer is ordering from us, "invoice" if a supplier is billing us), party (the other company's name), docNo (PO or invoice number), poRef (for invoices, the PO number it references, else ""), date (YYYY-MM-DD or ""), lines (array of {part, desc, qty (number), price (unit price number), amount (line total number as written on the document, or null)}). Use "" or null for anything missing; never invent values.\n\nDOCUMENT:\n${d.text.slice(0, 12000)}`;
+  try {
+    const res = await sampleFn(prompt, { modelTier: "quick" });
+    const m = res.text.match(/\{[\s\S]*\}/); const x = JSON.parse(m ? m[0] : res.text);
+    x.lines = (x.lines || []).map(l => ({ part: String(l.part || "").toUpperCase(), desc: l.desc || "", qty: +l.qty || 0, price: +l.price || 0, statedAmount: l.amount == null ? null : +l.amount, amount: l.amount == null ? +((+l.qty || 0) * (+l.price || 0)).toFixed(2) : +l.amount }));
+    d.ai = { type: x.type === "invoice" ? "invoice" : "order", party: x.party || "", docNo: x.docNo || "", poRef: x.poRef || "", date: x.date || "", lines: x.lines };
+    process(false);
+  } catch (e) { btn.textContent = e && e.code === "rate_limited" ? "Busy, try again" : "AI unavailable here"; }
+}
+$("#run").onclick = () => process(true);
+$("#rand").onclick = () => { DOCS = [...DOCS.filter(d => d.id.startsWith("u")), ...makeSampleDocs(randomParams())]; renderInbox(); process(true); };
+$("#reset").onclick = () => { DOCS = makeSampleDocs().map(d => ({ ...d })); renderInbox(); if (hasRun) process(false); };
+
+// ---------- 02 tables
+const BASE_VIEWS = {
+  orders: { label: "Customer orders", cols: [["Date","date"],["Customer","customer"],["PO #","po"],["Part","part"],["Description","desc"],["Qty","qty",1],["Unit $","price",2],["Total $","amount",2]], rows: r => r.orders },
+  invoices: { label: "Supplier invoices", cols: [["Date","date"],["Supplier","supplier"],["Invoice #","inv"],["Our PO","poRef"],["Part","part"],["Description","desc"],["Qty","qty",1],["Unit $","price",2],["Billed $","amount",2]], rows: r => r.invoiceLines },
+  inventory: { label: "Inventory", cols: [["Part","part"],["Description","desc"],["On hand","onHand",1],["Reorder pt","rop",1],["Ordered","demand",1],["UOM","uom"]], rows: r => r.inventory },
+  pos: { label: "Our open POs", cols: [["PO #","po"],["Supplier","supplier"],["Part","part"],["Qty","qty",1],["Agreed $","price",2]], rows: r => r.ourPOs }
+};
+let currentView = "orders", showRaw = false;
+function views() {
+  const v = {};
+  for (const [k, x] of Object.entries(BASE_VIEWS)) if (x.rows(RESULT).length) v[k] = x;
+  RESULT.extracted.filter(e => e.table && !e.duplicateOf).forEach(e => { v["t-" + e.doc.id] = { label: "Cleaned: " + e.doc.name.replace(/\.(csv|xlsx|xls|txt)$/i, ""), table: e.table, raw: e.raw }; });
+  return v;
+}
+function cell(v, kind) { if (v == null || (typeof v === "number" && isNaN(v))) return ""; if (kind === 2) return Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); if (kind === 1) return n0(v); return esc(v); }
+function isFlagged(view, row, key) {
+  if (view === "invoices" && key === "amount" && row.statedAmount != null && Math.abs(row.qty*row.price - row.statedAmount) > .01) return true;
+  if (view === "invoices" && key === "price") { const p = RESULT.ourPOs.find(x => x.po === row.poRef && x.part === row.part); return !!p && p.price !== row.price; }
+  if (view === "inventory" && key === "onHand") return row.demand > row.onHand || row.onHand < row.rop;
+  return false;
+}
+function renderTable() {
+  const V = views();
+  if (!V[currentView]) currentView = Object.keys(V)[0];
+  $("#tabs").innerHTML = Object.entries(V).map(([k, x]) => `<button role="tab" aria-selected="${k===currentView}" data-v="${k}">${esc(x.label)} (${x.table ? x.table.rows.length : x.rows(RESULT).length})</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b => b.onclick = () => { currentView = b.dataset.v; showRaw = false; renderTable(); });
+  const v = V[currentView];
+  if (!v) { $("#tbl").innerHTML = `<p class="small">No data yet. Add documents and run.</p>`; $("#ba").innerHTML = ""; return; }
+  if (v.table) {
+    $("#ba").innerHTML = `<span class="seg"><button aria-pressed="${!showRaw}" data-raw="0">Cleaned</button><button aria-pressed="${showRaw}" data-raw="1">Original</button></span> <span class="small">${v.table.total} fixes · ${v.table.rows.length} clean rows</span>`;
+    $("#ba").querySelectorAll("[data-raw]").forEach(b => b.onclick = () => { showRaw = b.dataset.raw === "1"; renderTable(); });
+    const H = showRaw ? v.raw.header : v.table.header, R = showRaw ? v.raw.rows : v.table.rows;
+    $("#tbl").innerHTML = `<table><thead><tr>${H.map((h, i) => `<th class="${!showRaw && v.table.kinds[i]==="number"?"num":""}">${esc(h)}</th>`).join("")}</tr></thead><tbody>${
+      R.slice(0, 500).map((r, ri) => `<tr>${r.map((c, ci) => `<td class="${!showRaw && v.table.kinds[ci]==="number"?"num":""} ${!showRaw && v.table.changed[ri] && v.table.changed[ri][ci] ? "chg" : ""}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>${R.length > 500 ? `<p class="small">Showing first 500 rows.</p>` : ""}`;
+    return;
+  }
+  $("#ba").innerHTML = "";
+  const rows = v.rows(RESULT);
+  $("#tbl").innerHTML = `<table><thead><tr>${v.cols.map(c => `<th class="${c[2]?"num":""}">${c[0]}</th>`).join("")}</tr></thead><tbody>${
+    rows.map(r => `<tr>${v.cols.map(c => `<td class="${c[2]?"num":""} ${isFlagged(currentView,r,c[1])?"flag":""}">${cell(r[c[1]], c[2])}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    <p class="small" style="margin:8px 0 0">Red cells were flagged by a cross-check. See step 03.</p>`;
+}
+function currentGrid() {
+  const v = views()[currentView]; if (!v) return [];
+  if (v.table) return [v.table.header, ...v.table.rows];
+  return [v.cols.map(c => c[0]), ...v.rows(RESULT).map(r => v.cols.map(c => r[c[1]] ?? ""))];
+}
+const toCSV = () => currentGrid().map(r => r.map(x => /[",\n]/.test(String(x)) ? `"${String(x).replace(/"/g,'""')}"` : String(x)).join(",")).join("\n");
+const toTSV = () => currentGrid().map(r => r.map(x => String(x).replace(/[\t\n]/g, " ")).join("\t")).join("\n");
+$("#copy").onclick = async () => { try { await navigator.clipboard.writeText(toTSV()); $("#copyMsg").textContent = "Copied. Paste into Excel or Google Sheets."; } catch { $("#copyMsg").textContent = "Copy was blocked by the browser."; } };
+$("#dl").hidden = true;
+$("#dl").onclick = async () => { try { await downloads.save({ filename: `${currentView.replace(/^t-/, "sheet-")}-clean.csv`, data: toCSV() }); } catch { $("#copyMsg").textContent = "Download declined or unavailable. Use Copy instead."; } };
+
+function renderFixes() {
+  const groups = RESULT.extracted.filter(e => e.fixes.length).map(e => `<div class="fixgroup"><b style="font-size:13px">${esc(e.doc.name)}</b><ul>${e.fixes.map(f => `<li>${esc(f)}</li>`).join("")}</ul></div>`);
+  const dups = RESULT.extracted.filter(e => e.duplicateOf).length;
+  const total = RESULT.extracted.reduce((s, e) => s + (e.table ? e.table.total : e.fixes.length), 0) + dups;
+  $("#fixes").innerHTML = `<b>${total} data-quality fixes applied automatically</b>${groups.join("")}${dups ? `<div class="fixgroup"><ul><li>Held back ${dups} duplicate invoice${dups>1?"s":""} instead of entering ${dups>1?"them":"it"} twice</li></ul></div>` : ""}`;
+}
+
+// ---------- 03 dashboard
+function renderDash() {
+  const r = RESULT;
+  const tableRows = r.extracted.filter(e => e.type === "table").reduce((s, e) => s + e.lines.length, 0);
+  const lines = r.orders.length + r.invoiceLines.length + r.inventory.length + r.ourPOs.length + tableRows;
+  const orderVal = r.orders.reduce((s, o) => s + (o.amount || 0), 0);
+  const atRisk = r.issues.reduce((s, i) => s + (i.atRisk || 0), 0);
+  const short = r.inventory.filter(i => i.demand > i.onHand).length;
+  $("#kpis").innerHTML = [
+    ["hero", "Overpayment caught", fmt$(atRisk), atRisk ? "duplicates + overbilling" : "no billing problems found"],
+    ["", "Line items captured", n0(lines), `from ${r.extracted.length} documents, 0 typed`],
+    ["", "Open customer orders", fmt$(orderVal), `${r.orders.length} lines`],
+    ["", "Parts short for orders", n0(short), r.inventory.length ? "can't ship from stock today" : "add an inventory sheet to check"]
+  ].map(([c, l, v, d]) => `<div class="card kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+  const icon = { critical: "■", serious: "▲", warning: "●", info: "i" };
+  $("#issues").innerHTML = r.issues.length ? r.issues.map(i => `<div class="issue"><span class="sev ${i.sev}">${icon[i.sev]} ${i.sev}</span><div><b>${esc(i.title)}</b><p>${esc(i.detail)}</p></div></div>`).join("")
+    : `<p class="small">✓ Nothing needs attention. Every invoice matches its PO and stock covers all orders.</p>`;
+  renderChart(r.inventory.filter(i => i.demand > 0).slice(0, 8));
+}
+function renderChart(items) {
+  const box = $("#chart"); box.querySelector("svg")?.remove(); box.querySelector(".empty")?.remove();
+  if (!items.length) { box.insertAdjacentHTML("beforeend", `<p class="small empty">No overlap between ordered parts and the inventory sheet yet.</p>`); $("#chartTable").innerHTML = ""; return; }
+  const W = 520, rowH = 64, padL = 78, padR = 56, top = 8, barH = 18, gap = 2;
+  const H = top + items.length * rowH + 24;
+  const max = Math.max(...items.flatMap(i => [i.onHand, i.demand])) * 1.05;
+  const x = v => padL + (W - padL - padR) * v / max;
+  const step = [50,100,200,250,500,1000,2000,5000].find(s => max / s <= 5) || 10000;
+  const ticks = []; for (let t = 0; t <= max; t += step) ticks.push(t);
+  const MONO = "IBM Plex Mono, ui-monospace, monospace";
+  const bar = (y, v, color, label, part) => {
+    const w = Math.max(x(v) - padL, 1), r = Math.min(4, w / 2);
+    const d = `M${padL},${y} h${w - r} a${r},${r} 0 0 1 ${r},${r} v${barH - 2*r} a${r},${r} 0 0 1 ${-r},${r} h${-(w - r)} z`;
+    return `<path d="${d}" fill="${color}"/><rect class="hit" x="${padL}" y="${y-1}" width="${W-padL-padR+40}" height="${barH+2}" fill="transparent" data-tip="${esc(part)} · ${label}: ${n0(v)}"/><text x="${x(v)+6}" y="${y+barH/2+4}" font-size="12" fill="#52514e" font-family="${MONO}">${n0(v)}</text>`;
+  };
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar chart of on-hand stock versus customer orders by part">`;
+  ticks.forEach(t => svg += `<line x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${H-22}" stroke="#ecebe5"/><text x="${x(t)}" y="${H-6}" font-size="11" text-anchor="middle" fill="#8a887f" font-family="${MONO}">${n0(t)}</text>`);
+  items.forEach((i, k) => {
+    const y0 = top + k * rowH + 6;
+    svg += `<text x="0" y="${y0 + barH + 2}" font-size="12.5" font-weight="600" fill="#0b0b0b" font-family="${MONO}">${esc(i.part)}</text>`;
+    svg += bar(y0, i.onHand, "var(--s1)", "On hand", i.part);
+    svg += bar(y0 + barH + gap, i.demand, "var(--s2)", "Ordered", i.part);
+    if (i.demand > i.onHand) svg += `<text x="0" y="${y0 + barH*2 + 16}" font-size="11.5" fill="#8a1f1f" font-family="IBM Plex Sans, system-ui, sans-serif">■ short ${n0(i.demand - i.onHand)}</text>`;
+  });
+  svg += `<line x1="${padL}" x2="${padL}" y1="${top}" y2="${H-22}" stroke="#52514e"/></svg>`;
+  box.insertAdjacentHTML("beforeend", svg);
+  const tip = $("#tip");
+  box.querySelectorAll(".hit").forEach(h => {
+    h.addEventListener("mousemove", ev => { const b = box.getBoundingClientRect(); tip.textContent = h.dataset.tip; tip.style.left = (ev.clientX - b.left) + "px"; tip.style.top = (ev.clientY - b.top) + "px"; tip.style.opacity = 1; });
+    h.addEventListener("mouseleave", () => tip.style.opacity = 0);
+  });
+  $("#chartTable").innerHTML = `<table><thead><tr><th>Part</th><th class="num">On hand</th><th class="num">Ordered</th><th class="num">Gap</th></tr></thead><tbody>${items.map(i => `<tr><td>${esc(i.part)}</td><td class="num">${n0(i.onHand)}</td><td class="num">${n0(i.demand)}</td><td class="num">${n0(i.onHand - i.demand)}</td></tr>`).join("")}</tbody></table>`;
+}
+function renderAll() { renderTable(); renderFixes(); renderDash(); }
+
+// ---------- 04 calculator
+function calc() {
+  const d = +$("#c-docs").value || 0, m = +$("#c-min").value || 0, r = +$("#c-rate").value || 0;
+  const hrs = d * m / 60 * 52 / 12;
+  $("#o-hrs").textContent = n0(Math.round(hrs));
+  $("#o-yr").textContent = "$" + n0(Math.round(hrs * 12 * r));
+}
+["#c-docs", "#c-min", "#c-rate"].forEach(s => $(s).addEventListener("input", calc)); calc();
+
+renderInbox();
+
+</script>
+</body>
+</html>
