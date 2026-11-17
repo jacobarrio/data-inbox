@@ -178,30 +178,30 @@ textarea{width:100%;font:12.5px/1.5 var(--mono);border:1px solid var(--line2);bo
   <div class="wrap">
     <nav class="top">
       <div class="brand"><span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h4l2 3h6l2-3h4"/><path d="M5 13V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7"/><path d="M3 13v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg></span>Data Inbox <small>by Jacob Lee</small></div>
-      <div class="navlinks"><a href="#s1">Demo</a><span>·</span><a href="#s4">ROI</a><a class="btn-ghost" href="#contact">Book a walkthrough →</a></div>
+      <div class="navlinks"><a href="#s1">Demo</a><span>·</span><a href="#s4">ROI</a><a class="btn-ghost" href="#contact">Let's talk →</a></div>
     </nav>
     <div class="hero-body">
       <div>
-        <span class="pill"><i></i>Interactive prototype · try it with your own files</span>
-        <h1>Stop retyping orders.<br><em>Let the data enter itself.</em></h1>
-        <p class="lede">POs, invoices and spreadsheets arrive messy and in every format. Data Inbox reads them, cleans them, cross-checks them and builds one clean dataset and a live dashboard in seconds. <b>It's yours to play with:</b> edit any document, generate a new week, or drop in your own Excel and PDF files.</p>
-        <div class="hero-cta"><a class="btn-hero" href="#s1">▶ Run the demo</a><a class="btn-hero alt" href="#contact">Talk to Jacob</a></div>
+        <span class="pill"><i></i>Working demo · try it with your own files</span>
+        <h1>No more typing orders<br><em>in by hand.</em></h1>
+        <p class="lede">I built this to show what automating your data entry actually looks like. Hit Run and it reads a week's worth of POs, invoices and spreadsheets, cleans them up, checks them against each other and puts it all in one place. <b>Go ahead and mess with it:</b> change a number, make a new week, or drop in one of your own spreadsheets.</p>
+        <div class="hero-cta"><a class="btn-hero" href="#s1">▶ Run the demo</a><a class="btn-hero alt" href="#contact">Get in touch</a></div>
       </div>
       <div class="hero-stats">
-        <div><b>2 sec</b><span>vs ~45 min by hand for a week of documents</span></div>
-        <div><b>0</b><span>fields typed by hand</span></div>
-        <div><b>5 checks</b><span>duplicates, overbilling, math, stock, pricing</span></div>
-        <div><b>100%</b><span>in your browser, nothing stored</span></div>
+        <div><b>2 sec</b><span>vs. about 45 min by hand for a week of paperwork</span></div>
+        <div><b>0</b><span>things typed in by hand</span></div>
+        <div><b>5 checks</b><span>double billing, overcharges, bad math, stock, pricing</span></div>
+        <div><b>Private</b><span>runs in your browser, nothing gets saved</span></div>
       </div>
     </div>
   </div>
 </div>
 <div class="wrap">
-  <p class="note">Sample companies, parts and figures are fictional. Files you add are processed in your browser and never saved; "Read with AI" (when shown) sends that one document's text to Claude to extract. A real build is set up around your own documents, systems and part numbers.</p>
+  <p class="note">The companies and numbers in this demo are made up. Anything you upload stays on your computer and isn't saved anywhere. A real setup gets built around your own paperwork, software and part numbers.</p>
 
   <section id="s1">
-    <div class="step"><span class="n">01</span><h2>The inbox: what arrives this week</h2></div>
-    <p class="sub">Customer POs, a supplier invoice (and a reminder email for the same invoice), an inventory count and your own open POs. Normally someone retypes all of this by hand. <b>Every document is editable</b>: change a quantity or price and re-run to see the checks react.</p>
+    <div class="step"><span class="n">01</span><h2>A typical week of paperwork</h2></div>
+    <p class="sub">Two customer POs (one by email, one PDF), a supplier invoice plus a reminder email for that same invoice, an inventory count and your open POs. Normally somebody types all of this in by hand. <b>You can edit any of them.</b> Change a price or quantity and hit Re-run.</p>
     <div class="inbox" id="inbox"></div>
     <div class="toolbar">
       <button class="primary" id="run">▶ Run automation</button>
@@ -212,8 +212,8 @@ textarea{width:100%;font:12.5px/1.5 var(--mono);border:1px solid var(--line2);bo
   </section>
 
   <section id="s2" class="locked">
-    <div class="step"><span class="n">02</span><h2>Clean data, one format</h2></div>
-    <p class="sub">Every line item pulled into consistent tables. Stray spaces, mixed date formats, typos in part numbers, "$1,200"-style text numbers, spelling variants and duplicates are fixed automatically. Highlighted cells were cleaned.</p>
+    <div class="step"><span class="n">02</span><h2>Cleaned up and in one place</h2></div>
+    <p class="sub">Every line item ends up in the same format. Extra spaces, mixed-up dates, sloppy part numbers, numbers typed as text, the same company spelled three ways, and duplicate rows all get fixed. Yellow cells are the ones it fixed.</p>
     <div class="card panel">
       <div class="tabs" role="tablist" id="tabs"></div>
       <div id="ba" style="margin-bottom:10px"></div><div class="tbl-wrap" id="tbl"></div>
@@ -227,18 +227,18 @@ textarea{width:100%;font:12.5px/1.5 var(--mono);border:1px solid var(--line2);bo
   </section>
 
   <section id="s3" class="locked">
-    <div class="step"><span class="n">03</span><h2>Cross-checks and dashboard</h2></div>
-    <p class="sub">Once the data is clean, the system checks invoices against your POs, checks orders against inventory, and flags anything that needs a person.</p>
+    <div class="step"><span class="n">03</span><h2>What it caught</h2></div>
+    <p class="sub">Once the data's clean, it checks invoices against your POs and orders against your stock, and flags anything a person should look at.</p>
     <div class="kpis" id="kpis"></div>
     <div class="dash">
       <div class="card panel">
-        <h3>Needs attention</h3>
-        <p class="sub">Caught automatically, sorted by severity</p>
+        <h3>Needs a look</h3>
+        <p class="sub">Most serious first</p>
         <div id="issues"></div>
       </div>
       <div class="card panel">
-        <h3>Customer demand vs. stock on hand</h3>
-        <p class="sub">Finished parts, units. Orange past blue means you can't fill every order from stock.</p>
+        <h3>Orders vs. what's on the shelf</h3>
+        <p class="sub">If the orange bar is longer than the blue one, you don't have enough on hand to fill those orders.</p>
         <div class="legend"><span><i style="background:var(--s1)"></i>On hand</span><span><i style="background:var(--s2)"></i>Ordered by customers</span></div>
         <div id="chart"><div class="tip" id="tip"></div></div>
         <details style="margin-top:8px"><summary class="small">Show as table</summary><div id="chartTable"></div></details>
@@ -247,18 +247,18 @@ textarea{width:100%;font:12.5px/1.5 var(--mono);border:1px solid var(--line2);bo
   </section>
 
   <section id="s4">
-    <div class="step"><span class="n">04</span><h2>What it's worth to your business</h2></div>
-    <p class="sub">Enter your own numbers. The defaults are placeholders, not estimates of your business.</p>
+    <div class="step"><span class="n">04</span><h2>What it could save you</h2></div>
+    <p class="sub">Plug in your own numbers. The defaults are just placeholders.</p>
     <div class="calc">
       <div class="card panel">
-        <div class="field"><label for="c-docs">Documents handled per week (POs, invoices, sheets)</label><input id="c-docs" type="number" min="0" value="100"></div>
-        <div class="field"><label for="c-min">Minutes to enter and check one by hand</label><input id="c-min" type="number" min="0" value="8"></div>
-        <div class="field"><label for="c-rate">Loaded hourly cost of that person ($)</label><input id="c-rate" type="number" min="0" value="28"></div>
+        <div class="field"><label for="c-docs">Documents per week (POs, invoices, spreadsheets)</label><input id="c-docs" type="number" min="0" value="100"></div>
+        <div class="field"><label for="c-min">Minutes to type in and check each one</label><input id="c-min" type="number" min="0" value="8"></div>
+        <div class="field"><label for="c-rate">What that person costs per hour ($)</label><input id="c-rate" type="number" min="0" value="28"></div>
       </div>
       <div class="card panel result" style="display:flex;flex-direction:column;justify-content:center;gap:18px">
         <div><div class="small">Hours of data entry per month</div><div class="big" id="o-hrs">0</div></div>
         <div><div class="small">Labor cost per year</div><div class="big" id="o-yr">$0</div></div>
-        <div class="small">Doesn't count errors caught, like the duplicate invoice and the overcharges above, or faster quotes and shipping.</div>
+        <div class="small">That's just the typing time. It doesn't count catching double-billed invoices or overcharges.</div>
       </div>
     </div>
   </section>
@@ -268,14 +268,14 @@ textarea{width:100%;font:12.5px/1.5 var(--mono);border:1px solid var(--line2);bo
   <div class="wrap">
     <div class="cta-inner">
       <div>
-        <h2>See it working on your own data.</h2>
-        <p>A real build is set up around your documents, your systems and your part numbers. It runs alongside your current process until you trust it, and your data stays yours. NDA is no problem.</p>
-        <div class="steps3"><span><b>1</b>Free 1-hour walkthrough</span><span><b>2</b>Fixed-price plan</span><span><b>3</b>Pilot in 2–4 weeks</span></div>
+        <h2>Want to see it on your own data?</h2>
+        <p>Every business does this a little differently, so a real setup gets built around your paperwork, your software and your part numbers. It runs side by side with how you do things now until you trust it. Your data stays yours, and I'm happy to sign an NDA.</p>
+        <div class="steps3"><span><b>1</b>Quick 15–20 min call</span><span><b>2</b>Fixed-price quote</span><span><b>3</b>Up and running in 2–4 weeks</span></div>
       </div>
       <div class="contact-card">
         <div class="nm">Jacob Lee</div>
         <div class="rl">AI &amp; Data Automation · Vancouver, WA</div>
-        <a href="tel:+15648883442"><span class="k">Phone</span>(564) 888-3442</a>
+        <a href="tel:+15648883442"><span class="k">Phone</span>564-888-3442</a>
         <a href="mailto:jacob61185@gmail.com"><span class="k">Email</span>jacob61185@gmail.com</a>
         <a href="https://github.com/jacobarrio" target="_blank" rel="noopener"><span class="k">GitHub</span>github.com/jacobarrio</a>
       </div>
@@ -571,7 +571,7 @@ function runPipeline(docs) {
   orders.forEach(o => { demand[o.part] = (demand[o.part] || 0) + o.qty; });
   const stock = inventory.map(i => ({ ...i, demand: demand[i.part] || 0 }));
   for (const s of stock) {
-    if (s.demand > s.onHand) issues.push({ sev: "critical", title: `Short ${s.demand - s.onHand} × ${s.part}`, detail: `Open customer orders need ${s.demand} ${s.uom}; only ${s.onHand} on hand. Schedule production or adjust ship dates.`, atRisk: 0 });
+    if (s.demand > s.onHand) issues.push({ sev: "critical", title: `Short ${s.demand - s.onHand} × ${s.part}`, detail: `Open customer orders need ${s.demand} ${s.uom}; only ${s.onHand} on hand. Need to run more or push ship dates.`, atRisk: 0 });
     else if (s.onHand < s.rop) issues.push({ sev: "warning", title: `${s.part} below reorder point`, detail: `${s.onHand} ${s.uom} on hand vs reorder point ${s.rop}. Time to reorder.`, atRisk: 0 });
   }
   // Inconsistent customer pricing
@@ -579,7 +579,7 @@ function runPipeline(docs) {
   orders.forEach(o => (byPart[o.part] = byPart[o.part] || []).push(o));
   for (const [part, os] of Object.entries(byPart)) {
     const prices = [...new Set(os.map(o => o.price))];
-    if (prices.length > 1) issues.push({ sev: "info", title: `Different prices for ${part}`, detail: os.map(o => `${o.customer}: ${fmt$(o.price)}`).join(" vs ") + ". Confirm this is intentional (volume pricing?).", atRisk: 0 });
+    if (prices.length > 1) issues.push({ sev: "info", title: `Different prices for ${part}`, detail: os.map(o => `${o.customer}: ${fmt$(o.price)}`).join(" vs ") + ". Make sure that's on purpose.", atRisk: 0 });
   }
   const order = { critical: 0, serious: 1, warning: 2, info: 3 };
   issues.sort((a, b) => order[a.sev] - order[b.sev]);
@@ -609,11 +609,11 @@ if (window.claude && claude.use) {
 function renderInbox() {
   $("#inbox").innerHTML = `
     <label class="card drop" id="drop">
-      <span class="ic">＋</span><b>Add your own documents</b>
+      <span class="ic">＋</span><b>Try your own files</b>
       <span class="small">Drop files here or tap to choose: Excel, CSV, PDF or .txt</span>
       <input type="file" id="file" multiple hidden>
-      <span class="small">or</span>
-      <button type="button" class="mini" id="pasteNew">Paste text as a new document</button>
+      
+      <button type="button" class="mini" id="pasteNew">Or paste in text</button>
       <span class="small" id="dropMsg"></span>
     </label>` +
     DOCS.map(d => `
@@ -791,7 +791,7 @@ function renderFixes() {
   const groups = RESULT.extracted.filter(e => e.fixes.length).map(e => `<div class="fixgroup"><b style="font-size:13px">${esc(e.doc.name)}</b><ul>${e.fixes.map(f => `<li>${esc(f)}</li>`).join("")}</ul></div>`);
   const dups = RESULT.extracted.filter(e => e.duplicateOf).length;
   const total = RESULT.extracted.reduce((s, e) => s + (e.table ? e.table.total : e.fixes.length), 0) + dups;
-  $("#fixes").innerHTML = `<b>${total} data-quality fixes applied automatically</b>${groups.join("")}${dups ? `<div class="fixgroup"><ul><li>Held back ${dups} duplicate invoice${dups>1?"s":""} instead of entering ${dups>1?"them":"it"} twice</li></ul></div>` : ""}`;
+  $("#fixes").innerHTML = `<b>${total} things fixed automatically</b>${groups.join("")}${dups ? `<div class="fixgroup"><ul><li>Held back ${dups} duplicate invoice${dups>1?"s":""} instead of entering ${dups>1?"them":"it"} twice</li></ul></div>` : ""}`;
 }
 
 // ---------- 03 dashboard
@@ -804,13 +804,13 @@ function renderDash() {
   const short = r.inventory.filter(i => i.demand > i.onHand).length;
   $("#kpis").innerHTML = [
     ["hero", "Overpayment caught", fmt$(atRisk), atRisk ? "duplicates + overbilling" : "no billing problems found"],
-    ["", "Line items captured", n0(lines), `from ${r.extracted.length} documents, 0 typed`],
+    ["", "Line items pulled in", n0(lines), `from ${r.extracted.length} documents, 0 typed`],
     ["", "Open customer orders", fmt$(orderVal), `${r.orders.length} lines`],
     ["", "Parts short for orders", n0(short), r.inventory.length ? "can't ship from stock today" : "add an inventory sheet to check"]
   ].map(([c, l, v, d]) => `<div class="card kpi ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
   const icon = { critical: "■", serious: "▲", warning: "●", info: "i" };
   $("#issues").innerHTML = r.issues.length ? r.issues.map(i => `<div class="issue"><span class="sev ${i.sev}">${icon[i.sev]} ${i.sev}</span><div><b>${esc(i.title)}</b><p>${esc(i.detail)}</p></div></div>`).join("")
-    : `<p class="small">✓ Nothing needs attention. Every invoice matches its PO and stock covers all orders.</p>`;
+    : `<p class="small">✓ Nothing to flag. Every invoice matches its PO and you have stock for every order.</p>`;
   renderChart(r.inventory.filter(i => i.demand > 0).slice(0, 8));
 }
 function renderChart(items) {

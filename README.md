@@ -40,4 +40,4 @@ All companies, parts and figures in the demo are fictional sample data.
 ## Contact
 
 **Jacob Lee**, AI & Data Automation, Vancouver, WA
-(564) 888-3442 · jacob61185@gmail.com
+564-888-3442 · jacob61185@gmail.com
